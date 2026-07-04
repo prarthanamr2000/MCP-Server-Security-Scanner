@@ -1,0 +1,1 @@
+"""Adversarial MCP attack simulators."""
