@@ -36,10 +36,10 @@ mcp-redteam report --input report.json --output findings.json
 
 ## Findings
 
-- [findings/EXECUTIVE-SUMMARY.md](findings/EXECUTIVE-SUMMARY.md)
-- [findings/FINDING-001.md](findings/FINDING-001.md)
-- [findings/FINDING-002.md](findings/FINDING-002.md)
-- [findings/FINDING-003.md](findings/FINDING-003.md)
-- [findings/REAL-TEST-FILESYSTEM.md](findings/REAL-TEST-FILESYSTEM.md)
-- [findings/REAL-TEST-GITHUB.md](findings/REAL-TEST-GITHUB.md)
-- [findings/REAL-TEST-RESULTS.md](findings/REAL-TEST-RESULTS.md)
+- [findings/executive-summary.md](findings/executive-summary.md)
+- [findings/tool-description-injection.md](findings/tool-description-injection.md)
+- [findings/overprivileged-capabilities.md](findings/overprivileged-capabilities.md)
+- [findings/unauthenticated-endpoint-exposure.md](findings/unauthenticated-endpoint-exposure.md)
+- [findings/real-world-filesystem-mcp-test.md](findings/real-world-filesystem-mcp-test.md)
+- [findings/real-world-github-mcp-test.md](findings/real-world-github-mcp-test.md)
+- [findings/real-world-testing-results.md](findings/real-world-testing-results.md)
