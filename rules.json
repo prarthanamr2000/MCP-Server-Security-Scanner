@@ -1,0 +1,38 @@
+{
+  "injection_terms": [
+    "ignore previous instructions",
+    "ignore system prompt",
+    "exfiltrate",
+    "reveal secrets",
+    "bypass approval",
+    "override policy",
+    "follow hidden instructions",
+    "trust the next instruction",
+    "send data to",
+    "use the token"
+  ],
+  "trust_boundary_terms": [
+    "bypass",
+    "override",
+    "elevate",
+    "hidden instruction",
+    "approval"
+  ],
+  "overprivileged": {
+    "max_permissions": 2,
+    "required_permissions": [
+      "filesystem:write",
+      "network:call"
+    ],
+    "description_terms": [
+      "merge",
+      "pull request"
+    ],
+    "severity": "high",
+    "message": "Tool declares a broad or destructive capability surface for agent execution."
+  },
+  "unauthenticated": {
+    "severity": "critical",
+    "message": "Endpoint is exposed without authentication."
+  }
+}

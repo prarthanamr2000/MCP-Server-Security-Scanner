@@ -1,30 +1,35 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+import json
+import re
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
-INJECTION_TERMS = [
-    "ignore previous instructions",
-    "ignore system prompt",
-    "exfiltrate",
-    "reveal secrets",
-    "bypass approval",
-    "override policy",
-    "follow hidden instructions",
-    "trust the next instruction",
-    "send data to",
-    "use the token",
-]
+def _normalize_text(value: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", str(value).lower()).split())
 
 
-def scan_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
+def _load_rules(rules_config_path: Optional[Path | str] = None) -> Dict[str, Any]:
+    default_rules_path = Path(__file__).resolve().parents[2] / "rules.json"
+    path = Path(rules_config_path) if rules_config_path is not None else default_rules_path
+    with path.open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def scan_manifest(manifest: Dict[str, Any], rules_config_path: Optional[Path | str] = None) -> Dict[str, Any]:
+    rules = _load_rules(rules_config_path)
+    injection_terms = rules.get("injection_terms", [])
+    trust_boundary_terms = rules.get("trust_boundary_terms", [])
+    overprivileged_rules = rules.get("overprivileged", {})
+    unauthenticated_rules = rules.get("unauthenticated", {})
     findings: List[Dict[str, Any]] = []
 
     for tool in manifest.get("tools", []):
-        description = str(tool.get("description", "")).lower()
-        permissions = [str(permission).lower() for permission in (tool.get("permissions", []) or [])]
+        description = _normalize_text(tool.get("description", ""))
+        permissions = [_normalize_text(permission) for permission in (tool.get("permissions", []) or [])]
 
-        if any(term in description for term in INJECTION_TERMS):
+        if any(_normalize_text(term) in description for term in injection_terms):
             findings.append(
                 {
                     "type": "tool_poisoning",
@@ -34,7 +39,7 @@ def scan_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
                 }
             )
 
-        if any(token in description for token in ["bypass", "override", "elevate", "hidden instruction", "approval"]):
+        if any(_normalize_text(token) in description for token in trust_boundary_terms):
             findings.append(
                 {
                     "type": "trust_boundary_violation",
@@ -44,13 +49,16 @@ def scan_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
                 }
             )
 
-        if len(permissions) > 2 or ({"filesystem:write", "network:call"} <= set(permissions)) or ("merge" in description and "pull request" in description):
+        required_permissions = {_normalize_text(permission) for permission in overprivileged_rules.get("required_permissions", [])}
+        max_permissions = int(overprivileged_rules.get("max_permissions", 2))
+        description_terms = overprivileged_rules.get("description_terms", [])
+        if len(permissions) > max_permissions or (required_permissions <= set(permissions)) or any(_normalize_text(term) in description for term in description_terms):
             findings.append(
                 {
                     "type": "overprivileged_scopes",
-                    "severity": "high",
+                    "severity": overprivileged_rules.get("severity", "high"),
                     "tool": tool.get("name", "unknown"),
-                    "message": "Tool declares a broad or destructive capability surface for agent execution.",
+                    "message": overprivileged_rules.get("message", "Tool declares a broad or destructive capability surface for agent execution."),
                 }
             )
 
@@ -59,9 +67,9 @@ def scan_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
         findings.extend(
             {
                 "type": "unauthenticated_endpoint",
-                "severity": "critical",
+                "severity": unauthenticated_rules.get("severity", "critical"),
                 "path": endpoint.get("path", "unknown"),
-                "message": "Endpoint is exposed without authentication.",
+                "message": unauthenticated_rules.get("message", "Endpoint is exposed without authentication."),
             }
             for endpoint in unauthenticated
         )
